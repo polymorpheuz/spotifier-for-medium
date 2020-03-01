@@ -20,7 +20,7 @@ const updatePlaylists = async () => {
   try {
     const playlistArray = await playlists.getAll();
 
-    const deleteBlankPlaylists = async (playlistPayload, index = 0) => {
+    const deletePlaylistsWithoutSubscribers = async (playlistPayload, index = 0) => {
       let localPlaylists = [ ...playlistPayload ];
       const playlistId = localPlaylists[index].id;
       const subscribers = await playlistsSubscribers
@@ -36,14 +36,14 @@ const updatePlaylists = async () => {
         return playlistPayload;
       }
 
-      return await deleteBlankPlaylists(
+      return await deletePlaylistsWithoutSubscribers(
         localPlaylists,
         index + 1
       );
     };
-    const filteredPlaylists = await deleteBlankPlaylists(playlistArray);
+    const filteredPlaylists = await deletePlaylistsWithoutSubscribers(playlistArray);
 
-    const updatePlaylists = async (playlistArr, token, index = 0) => {
+    const recursiveUpdater = async (playlistArr, token, index = 0) => {
       const oldPlaylistSnapshot = playlistArr[index];
       const newPlaylistSnapshot = await getPlaylist(token, oldPlaylistSnapshot.id);
 
@@ -67,7 +67,7 @@ const updatePlaylists = async () => {
         return;
       }
 
-      return await updatePlaylists(playlistArr, token, index + 1);
+      return await recursiveUpdater(playlistArr, token, index + 1);
     };
 
     const spotifyToken = await getSpotifyAuthToken(
@@ -75,7 +75,7 @@ const updatePlaylists = async () => {
       process.env.SPOTIFY_CLIENT_SECRET
     );
 
-    await updatePlaylists(filteredPlaylists, spotifyToken);
+    await recursiveUpdater(filteredPlaylists, spotifyToken);
 
     return createResponseObject(200, 'Successful playlist update ');
   } catch (e) {
@@ -101,7 +101,7 @@ const updateArtists = async () => {
   try {
     const artistArray = await artists.getAll();
 
-    const deleteBlankArtists = async (artistPayload, index = 0) => {
+    const deleteArtistsWithoutSubscribers = async (artistPayload, index = 0) => {
       let localArtists = [ ...artistPayload ];
       const artistId = localArtists[index].id;
       const subscribers = await artistsSubscribers
@@ -117,14 +117,14 @@ const updateArtists = async () => {
         return artistPayload;
       }
 
-      return await deleteBlankArtists(
+      return await deleteArtistsWithoutSubscribers(
         localArtists,
         index + 1
       );
     };
-    const filteredArtists = await deleteBlankArtists(artistArray);
+    const filteredArtists = await deleteArtistsWithoutSubscribers(artistArray);
 
-    const updateArtists = async (artistArr, token, index = 0) => {
+    const recursiveUpdater = async (artistArr, token, index = 0) => {
       const oldArtistSnapshot = artistArr[index];
       const newArtistSnapshot = await getArtist(token, oldArtistSnapshot.id);
 
@@ -132,9 +132,6 @@ const updateArtists = async () => {
       const newReleases = newArtistSnapshot.releases
         .filter(newItem => oldArtistSnapshot.releases.indexOf(newItem.id) === -1);
 
-      console.log('oldArtistSnapshot', oldArtistSnapshot.releases.length);
-      console.log('newArtistSnapshot', newArtistSnapshot.releases.length);
-      console.log('newReleases', newReleases);
       if (newReleases.length > 0) {
         const subscribers = await artistsSubscribers.getAllArtistEntries(newArtistSnapshot.id);
 
@@ -166,7 +163,7 @@ const updateArtists = async () => {
         return;
       }
 
-      return await updateArtists(artistArr, token, index + 1);
+      return await recursiveUpdater(artistArr, token, index + 1);
     };
 
     const spotifyToken = await getSpotifyAuthToken(
@@ -174,8 +171,7 @@ const updateArtists = async () => {
       process.env.SPOTIFY_CLIENT_SECRET
     );
 
-    console.log('updatePlaylists first invocation');
-    await updateArtists(filteredArtists, spotifyToken);
+    await recursiveUpdater(filteredArtists, spotifyToken);
 
     return createResponseObject(200, 'Successful artist update ');
   } catch (e) {
