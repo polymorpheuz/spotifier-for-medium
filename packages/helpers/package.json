@@ -1,0 +1,7 @@
+{
+  "name": "@spotifier/helpers",
+  "version": "0.0.0",
+  "description": "A folder full of helpers",
+  "private": true,
+  "main": "index.js"
+}

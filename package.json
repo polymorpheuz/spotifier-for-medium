@@ -1,0 +1,24 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "deploy:dev": "cd deploy && ./all.sh dev",
+    "deploy:bot:dev": "cd deploy && ./bot.sh dev",
+    "deploy:updater:dev": "cd deploy && ./updater.sh dev",
+    "deploy:notification-queue:dev": "cd deploy && ./notification-queue.sh dev",
+    "deploy:prod": "cd deploy && ./all.sh prod",
+    "deploy:bot:prod": "cd deploy && ./bot.sh prod",
+    "deploy:updater:prod": "cd deploy && ./updater.sh prod",
+    "deploy:notification-queue:prod": "cd deploy && ./notification-queue.sh prod"
+  },
+  "devDependencies": {
+    "lerna": "^3.13.1"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "polymorpheuz <polymorpheuz@gmail.com>",
+  "license": "MIT"
+}

@@ -1,0 +1,74 @@
+service: spotifier-updater
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  # You can pass the region that is closer to you and your potential users
+  region: eu-central-1
+  stage: ${opt:stage}
+  versionFunctions: false
+  environment:
+    REGION: ${self:provider.region}
+    TELEGRAM_BOT_KEY: ${ssm:/telegram-bot-key-${self:provider.stage}~true}
+    SPOTIFY_CLIENT_ID: ${ssm:/spotify-client-id~true}
+    SPOTIFY_CLIENT_SECRET: ${ssm:/spotify-client-secret~true}
+    PLAYLISTS_TABLE: spotifier-playlists-${self:provider.stage}
+    PLAYLISTS_SUBSCRIBERS_TABLE: spotifier-playlists-subscribers-${self:provider.stage}
+    ARTISTS_TABLE: spotifier-artists-${self:provider.stage}
+    ARTISTS_SUBSCRIBERS_TABLE: spotifier-artists-subscribers-${self:provider.stage}
+    NOTIFICATION_QUEUE_TABLE: spotifier-notification-queue-${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - "arn:aws:ssm:${self:provider.region}:${self:custom.accountId}:parameter/telegram-bot-key-${self:provider.stage}"
+        - "arn:aws:ssm:${self:provider.region}:${self:custom.accountId}:parameter/spotify-client-id"
+        - "arn:aws:ssm:${self:provider.region}:${self:custom.accountId}:parameter/spotify-client-secret"
+    - Effect: Allow
+      Action:
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:PutItem
+        - dynamodb:Scan
+        - dynamodb:Query
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.PLAYLISTS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.PLAYLISTS_SUBSCRIBERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.ARTISTS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.ARTISTS_SUBSCRIBERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.NOTIFICATION_QUEUE_TABLE}"
+
+functions:
+  playlists:
+    handler: playlists.songUpdater
+    events:
+      - schedule: cron(0 10 * * ? *)
+  artists:
+    handler: artists.releaseUpdater
+    events:
+      - schedule: cron(0 10 * * ? *)
+
+resources:
+  Resources:
+    notificationQueueTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:provider.environment.NOTIFICATION_QUEUE_TABLE}
+        AttributeDefinitions:
+          - AttributeName: chatId
+            AttributeType: S
+          - AttributeName: message
+            AttributeType: S
+        KeySchema:
+          - AttributeName: chatId
+            KeyType: HASH
+          - AttributeName: message
+            KeyType: RANGE
+        StreamSpecification:
+          StreamViewType: NEW_IMAGE
+        BillingMode: PAY_PER_REQUEST
+
+custom:
+  accountId: 458799122057

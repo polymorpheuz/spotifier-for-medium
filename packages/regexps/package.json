@@ -1,0 +1,7 @@
+{
+  "name": "@spotifier/regexps",
+  "version": "0.0.0",
+  "description": "A folder full of regexps",
+  "private": true,
+  "main": "index.js"
+}

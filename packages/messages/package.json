@@ -1,0 +1,7 @@
+{
+  "name": "@spotifier/messages",
+  "version": "0.0.0",
+  "description": "A folder full of messages",
+  "private": true,
+  "main": "index.js"
+}

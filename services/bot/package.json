@@ -1,0 +1,8 @@
+{
+  "name": "spotifier-bot",
+  "version": "0.0.0",
+  "description": "Bot interface lambda",
+  "dependencies": {
+    "axios": "^0.19.2"
+  }
+}

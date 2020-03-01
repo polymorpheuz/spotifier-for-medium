@@ -1,0 +1,37 @@
+service: spotifier-notification-queue
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  # You can pass the region that is closer to you and your potential users
+  region: eu-central-1
+  stage: ${opt:stage}
+  versionFunctions: false
+  environment:
+    REGION: ${self:provider.region}
+    TELEGRAM_BOT_KEY: ${ssm:/telegram-bot-key-${self:provider.stage}~true}
+    NOTIFICATION_QUEUE_TABLE: spotifier-notification-queue-${self:provider.stage}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - "arn:aws:ssm:${self:provider.region}:${self:custom.accountId}:parameter/telegram-bot-key-${self:provider.stage}"
+    - Effect: Allow
+      Action:
+        - dynamodb:PutItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.NOTIFICATION_QUEUE_TABLE}"
+
+functions:
+  queue:
+    handler: index.handler
+    events:
+      - stream: "arn:aws:dynamodb:${self:provider.region}:${self:custom.accountId}:table/${self:provider.environment.NOTIFICATION_QUEUE_TABLE}/stream/${self:custom.streamTimestamp.${self:provider.stage}}"
+
+custom:
+  accountId: 458799122057
+  streamTimestamp:
+    dev: "2020-02-19T20:27:35.399"
+    prod: "2020-02-21T16:40:39.250"
